@@ -1,27 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-app
+  name: githubactions-aks-demo
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: java-test
+      app: githubactions-aks-demo
   template:
     metadata:
       labels:
-        app: java-test
+        app: githubactions-aks-demo
     spec:
-      nodeSelector:
-        "beta.kubernetes.io/os": linux
       containers:
-      - name: java-container
+      - name: githubactions-aks-demo
         image: demoaksnov.azurecr.io/javaimage:v1
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
         ports:
         - containerPort: 80
-        resources:
-          requests:
-            cpu: 250m
-          limits:
-            cpu: 500m
-       
