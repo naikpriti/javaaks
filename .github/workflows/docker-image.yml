@@ -46,8 +46,8 @@ jobs:
     - uses: azure/k8s-deploy@v1
       with:
         manifests: |
-          manifests/java-deployment.yaml
-          manifests/java-service.yaml
+          manifest/java-deployment.yaml
+          manifest/java-service.yaml
           
         images: |
           ${{ env.REGISTRY_NAME }}.azurecr.io/javaimage:${{ github.sha }}
