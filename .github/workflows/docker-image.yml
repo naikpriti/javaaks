@@ -6,7 +6,7 @@ env:
   REGISTRY_NAME: demoaksnov
   CLUSTER_NAME: tstk8cluster
   CLUSTER_RESOURCE_GROUP: tstk8grp
-  NAMESPACE: dev
+  NAMESPACE: test
   
 jobs:
   build:
@@ -25,3 +25,34 @@ jobs:
     - run: |
         docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/javaimage:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/javaimage:${{ github.sha }}
+        # Set the target Azure Kubernetes Service (AKS) cluster. 
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: '${{ secrets.AZURE_CREDENTIALS }}'
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+        # Create namespace if doesn't exist
+    - run: |
+        kubectl create namespace ${{ env.NAMESPACE }} --dry-run -o json | kubectl apply -f -
+      # Create imagepullsecret for Azure Container registry (ACR)
+    - uses: azure/k8s-create-secret@v1
+      with:
+        container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+        container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+        container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+        secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
+        namespace: ${{ env.NAMESPACE }}
+        # Deploy app to AKS
+    - uses: azure/k8s-deploy@v1
+      with:
+        manifests: |
+          manifests/java-deployment.yaml
+          manifests/java-service.yaml
+          
+        images: |
+          ${{ env.REGISTRY_NAME }}.azurecr.io/javaimage:${{ github.sha }}
+        imagepullsecrets: |
+          ${{ env.REGISTRY_NAME }}-registry-connection
+        namespace: ${{ env.NAMESPACE }}
+
+    
